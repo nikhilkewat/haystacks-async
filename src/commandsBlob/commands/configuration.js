@@ -36,8 +36,8 @@ const namespacePrefix = sys.ccommandsBlob + bas.cDot + wrd.ccommands + bas.cDot 
  * @description Saves out all of the configuration data to a JSON file so custom user settings can be persisted between sessions.
  * @param {string} inputData Not used for this command.
  * @param {string} inputMetaData Not used for this command.
- * @return {array<boolean,string|integer|boolean|object|array>} An array with a boolean True or False value to
- * indicate if the application should exit or not exit, followed by the command output.
+ * @return {array<boolean,string|integer|boolean|object|array,object>} An array with a boolean True or False value to
+ * indicate if the application should exit or not exit, followed by the command output and finally the promise for the command execution.
  * @author Seth Hollingsead
  * @date 2022/03/11
  */
@@ -47,7 +47,15 @@ async function saveConfiguration(inputData, inputMetaData) {
   await loggers.consoleLog(namespacePrefix + functionName, msg.cinputDataIs + JSON.stringify(inputData));
   await loggers.consoleLog(namespacePrefix + functionName, msg.cinputMetaDataIs + inputMetaData);
   let returnData = [true, {}];
-  returnData[1] = await dataBroker.writeJsonDataToFile(await configurator.getConfigurationSetting(wrd.csystem, cfg.cappConfigPath) + wrd.cconfig + gen.cDotjson, JSON.stringify(D));
+  let promise = new Promise(function(resolve, reject) {
+    try {
+      returnData[1] = dataBroker.writeJsonDataToFile(configurator.getConfigurationSetting(wrd.csystem, cfg.cappConfigPath) + wrd.cconfig + gen.cDotjson, JSON.stringify(D));
+      resolve(namespacePrefix + functionName + bas.cSpace + wrd.cCompleted);
+    } catch (err) {
+      reject(namespacePrefix + functionName + bas.cSpace + wrd.cFailed);
+    }
+  });
+  returnData[2] = promise;
   await loggers.consoleLog(namespacePrefix + functionName, msg.creturnDataIs + JSON.stringify(returnData));
   await loggers.consoleLog(namespacePrefix + functionName, msg.cEND_Function);
   return returnData;
@@ -66,8 +74,8 @@ async function saveConfiguration(inputData, inputMetaData) {
  * inputData[1] = fully.Qualified.Configuration.Path
  * inputData[2] = value to assign to the configuration setting property
  * @param {string} inputMetaData Not used for this command.
- * @return {array<boolean,string|integer|boolean|object|array>} An array with a boolean True or False value to
- * indicate if the application should exit or not exit, followed by the command output.
+ * @return {array<boolean,string|integer|boolean|object|array,object>} An array with a boolean True or False value to
+ * indicate if the application should exit or not exit, followed by the command output and finally the promise for the command execution.
  * @author Seth Hollingsead
  * @date 2022/05/11
  * @NOTE Test String 1: changeConfigurationSetting configuration.debugSetting.commandsBlob.commands.system true
@@ -80,33 +88,38 @@ async function changeConfigurationSetting(inputData, inputMetaData) {
   await loggers.consoleLog(namespacePrefix + functionName, msg.cinputMetaDataIs + inputMetaData);
   let returnData = [true, {}];
   let errorMessage = '';
-  if (inputData && inputData.length === 3) {
-    let dataPath = inputData[1];
-    dataPath = await ruleBroker.processRules([dataPath, ''], [biz.cgetWordsArrayFromString]);
-    // dataPath is:
-    await loggers.consoleLog(namespacePrefix + functionName, msg.cdataPathIs + JSON.stringify(dataPath));
-    let newValue = inputData[2];
-    // newValue is:
-    await loggers.consoleLog(namespacePrefix + functionName, msg.cnewValueIs + JSON.stringify(newValue));
-    if (dataPath[0] === wrd.cconfiguration) {
-      dataPath.shift(wrd.cconfiguration);
+  let promise = new Promise(function(resolve, reject) {
+    if (inputData && inputData.length === 3) {
+      let dataPath = inputData[1];
+      dataPath = ruleBroker.processRules([dataPath, ''], [biz.cgetWordsArrayFromString]);
+      // dataPath is:
+      loggers.consoleLog(namespacePrefix + functionName, msg.cdataPathIs + JSON.stringify(dataPath));
+      let newValue = inputData[2];
+      // newValue is:
+      loggers.consoleLog(namespacePrefix + functionName, msg.cnewValueIs + JSON.stringify(newValue));
+      if (dataPath[0] === wrd.cconfiguration) {
+        dataPath.shift(wrd.cconfiguration);
+      }
+      let configurationName = dataPath.pop();
+      // dataPath is:
+      loggers.consoleLog(namespacePrefix + functionName, msg.cdataPathIs + JSON.stringify(dataPath));
+      dataPath = dataPath.join(bas.cDot);
+      newValue = ruleBroker.processRules([newValue, ''], [biz.cstringToDataType]);
+      configurator.setConfigurationSetting(dataPath, configurationName, newValue);
+      returnData[1] = true;
+      resolve(namespacePrefix + functionName + bas.cSpace + wrd.cCompleted);
+    } else {
+      // ERROR: Invalid entry, please enter a valid configuration namespace to change,
+      // and a value to assign to the configuration setting.
+      errorMessage = msg.cchangeConfigurationSettingMessage01 + msg.cchangeConfigurationSettingMessage02;
+      console.log(errorMessage);
+      returnData[1] = errorMessage;
+      // EXAMPLE: changeConfigurationSetting debugSetting.businessRules.rules.arrayParsing.commandArrayParsing.solveLehmerCode true
+      console.log(msg.cchangeConfigurationSettingMessage03);
+      reject(namespacePrefix + functionName + bas.cSpace + wrd.cFailed);
     }
-    let configurationName = dataPath.pop();
-    // dataPath is:
-    await loggers.consoleLog(namespacePrefix + functionName, msg.cdataPathIs + JSON.stringify(dataPath));
-    dataPath = dataPath.join(bas.cDot);
-    newValue = await ruleBroker.processRules([newValue, ''], [biz.cstringToDataType]);
-    await configurator.setConfigurationSetting(dataPath, configurationName, newValue);
-    returnData[1] = true;
-  } else {
-    // ERROR: Invalid entry, please enter a valid configuration namespace to change,
-    // and a value to assign to the configuration setting.
-    errorMessage = msg.cchangeConfigurationSettingMessage01 + msg.cchangeConfigurationSettingMessage02;
-    console.log(errorMessage);
-    returnData[1] = errorMessage;
-    // EXAMPLE: changeConfigurationSetting debugSetting.businessRules.rules.arrayParsing.commandArrayParsing.solveLehmerCode true
-    console.log(msg.cchangeConfigurationSettingMessage03);
-  }
+  });
+  returnData[2] = promise;
   await loggers.consoleLog(namespacePrefix + functionName, msg.creturnDataIs + JSON.stringify(returnData));
   await loggers.consoleLog(namespacePrefix + functionName, msg.cEND_Function);
   return returnData;
@@ -117,8 +130,8 @@ async function changeConfigurationSetting(inputData, inputMetaData) {
  * @description Lists all of the debug configuration themes currently installed in the resources/themes folder.
  * @param {string} inputData Not used for this command.
  * @param {string} inputMetaData Not used for this command.
- * @return {array<boolean,string|integer|boolean|object|array>} An array with a boolean True or False value to
- * indicate if the application should exit or not exit, followed by the command output.
+ * @return {array<boolean,string|integer|boolean|object|array,object>} An array with a boolean True or False value to
+ * indicate if the application should exit or not exit, followed by the command output and finally the promise for the command execution.
  * @author Seth Hollingsead
  * @date 2022/06/10
  */
@@ -128,10 +141,18 @@ async function listConfigurationThemes(inputData, inputMetaData) {
   await loggers.consoleLog(namespacePrefix + functionName, msg.cinputDataIs + JSON.stringify(inputData));
   await loggers.consoleLog(namespacePrefix + functionName, msg.cinputMetaDataIs + inputMetaData);
   let returnData = [true, {}];
-  let themesList = await themeBroker.getNamedThemes();
-  // themesList is:
-  console.log(msg.cthemesListIs + JSON.stringify(themesList));
-  returnData[1] = themesList;
+  let promise = new Promise(function(resolve, reject) {
+    try {
+      let themesList = themeBroker.getNamedThemes();
+      // themesList is:
+      console.log(msg.cthemesListIs + JSON.stringify(themesList));
+      returnData[1] = themesList;
+      resolve(namespacePrefix + functionName + bas.cSpace + wrd.cCompleted);
+    } catch (err) {
+      reject(namespacePrefix + functionName + bas.cSpace + wrd.cFailed);
+    }
+  });
+  returnData[2] = promise;
   await loggers.consoleLog(namespacePrefix + functionName, msg.creturnDataIs + JSON.stringify(returnData));
   await loggers.consoleLog(namespacePrefix + functionName, msg.cEND_Function);
   return returnData;
@@ -144,8 +165,8 @@ async function listConfigurationThemes(inputData, inputMetaData) {
  * inputData[0] = changeDebugConfigurationTheme
  * inputData[1] = The name of the theme that the user would like to switch to.
  * @param {string} inputMetaData Not used for this command.
- * @return {array<boolean,string|integer|boolean|object|array>} An array with a boolean True or False value to
- * indicate if the application should exit or not exit, followed by the command output.
+ * @return {array<boolean,string|integer|boolean|object|array,object>} An array with a boolean True or False value to
+ * indicate if the application should exit or not exit, followed by the command output and finally the promise for the command execution.
  * @author Seth Hollingsead
  * @date 2022/06/13
  */
@@ -156,43 +177,51 @@ async function changeDebugConfigurationTheme(inputData, inputMetaData) {
   await loggers.consoleLog(namespacePrefix + functionName, msg.cinputMetaDataIs + inputMetaData);
   let returnData = [true, {}];
   let errorMessage = '';
-  if (inputData && inputData.length === 2) {
-    let desiredThemeName = inputData[1];
-    // desiredThemeName is:
-    await loggers.consoleLog(namespacePrefix + functionName, msg.cdesiredThemeNameIs + desiredThemeName);
-    let namedThemePath = await themeBroker.getNamedThemePath(desiredThemeName);
-    if (namedThemePath !== false) {
-      // namedThemePath is verified:
-      await loggers.consoleLog(namespacePrefix + functionName, msg.cnamedThemePathIsVerified + namedThemePath);
-      await configurator.setConfigurationSetting(wrd.csystem, sys.cthemeConfigPath, namedThemePath);
-      let loadedThemeData = await themeBroker.loadTheme(namedThemePath);
-      // loadedThemeData is:
-      await loggers.consoleLog(namespacePrefix + functionName, msg.cloadedThemeDataIs + JSON.stringify(loadedThemeData));
-      let themeLoadedSuccessfully = await themeBroker.applyTheme(loadedThemeData);
-      returnData[1] = themeLoadedSuccessfully;
-      if (themeLoadedSuccessfully === false) {
-        // ERROR: There was an error applying the selected theme to the active debug settings configuration.
-        errorMessage = msg.cchangeDebugConfigurationThemeMessage01;
+  let promise = new Promise(function(resolve, reject) {
+    if (inputData && inputData.length === 2) {
+      let desiredThemeName = inputData[1];
+      // desiredThemeName is:
+      loggers.consoleLog(namespacePrefix + functionName, msg.cdesiredThemeNameIs + desiredThemeName);
+      let namedThemePath = themeBroker.getNamedThemePath(desiredThemeName);
+      if (namedThemePath !== false) {
+        // namedThemePath is verified:
+        loggers.consoleLog(namespacePrefix + functionName, msg.cnamedThemePathIsVerified + namedThemePath);
+        configurator.setConfigurationSetting(wrd.csystem, sys.cthemeConfigPath, namedThemePath);
+        let loadedThemeData = themeBroker.loadTheme(namedThemePath);
+        // loadedThemeData is:
+        loggers.consoleLog(namespacePrefix + functionName, msg.cloadedThemeDataIs + JSON.stringify(loadedThemeData));
+        let themeLoadedSuccessfully = themeBroker.applyTheme(loadedThemeData);
+        returnData[1] = themeLoadedSuccessfully;
+        if (themeLoadedSuccessfully === true) {
+          resolve(namespacePrefix + functionName + bas.cSpace + wrd.cCompleted);
+        } else {
+          // ERROR: There was an error applying the selected theme to the active debug settings configuration.
+          errorMessage = msg.cchangeDebugConfigurationThemeMessage01;
+          console.log(errorMessage);
+          returnData[1] = errorMessage;
+          reject(namespacePrefix + functionName + bas.cSpace + wrd.cFailed);
+        }
+      } else {
+        // ERROR: The specified theme name was not found in the current list of supported themes.
+        errorMessage = msg.cchangeDebugConfigurationThemeMessage02;
         console.log(errorMessage);
         returnData[1] = errorMessage;
-      } // End-if (themeLoadedSuccessfully === false)
+        // You can find the available themes at the following path location:
+        console.log(msg.cchangeDebugConfigurationThemeMessage03 +
+          configurator.getConfigurationSetting(wrd.csystem, cfg.cframeworkThemesPath));
+        reject(namespacePrefix + functionName + bas.cSpace + wrd.cFailed);
+      }
     } else {
-      // ERROR: The specified theme name was not found in the current list of supported themes.
-      errorMessage = msg.cchangeDebugConfigurationThemeMessage02;
+      // ERROR: Invalid entry, please enter a theme name you would like the debug settings to switch to when logging debug statements.
+      errorMessage = msg.cchangeDebugConfigurationThemeMessage04
       console.log(errorMessage);
       returnData[1] = errorMessage;
-      // You can find the available themes at the following path location:
-      console.log(msg.cchangeDebugConfigurationThemeMessage03 +
-        await configurator.getConfigurationSetting(wrd.csystem, cfg.cframeworkThemesPath));
+      // EXAMPLE: changeDebugConfigurationTheme Skywalker
+      console.log(msg.cchangeDebugConfigurationThemeMessage05);
+      reject(namespacePrefix + functionName + bas.cSpace + wrd.cFailed);
     }
-  } else {
-    // ERROR: Invalid entry, please enter a theme name you would like the debug settings to switch to when logging debug statements.
-    errorMessage = msg.cchangeDebugConfigurationThemeMessage04
-    console.log(errorMessage);
-    returnData[1] = errorMessage;
-    // EXAMPLE: changeDebugConfigurationTheme Skywalker
-    console.log(msg.cchangeDebugConfigurationThemeMessage05);
-  }
+  });
+  returnData[2] = promise;
   await loggers.consoleLog(namespacePrefix + functionName, msg.creturnDataIs + JSON.stringify(returnData));
   await loggers.consoleLog(namespacePrefix + functionName, msg.cEND_Function);
   return returnData;

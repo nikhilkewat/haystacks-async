@@ -571,6 +571,7 @@ async function executeCommand(commandString) {
   let commandStartTime = '';
   let commandEndTime = '';
   let commandDeltaTime = '';
+  // let commandExecutionFinished = false;
 
   await loggers.consoleLog(namespacePrefix + functionName, 'commandQueue is: ' + await queue.queuePrint(sys.cCommandQueue));
 
@@ -596,6 +597,8 @@ async function executeCommand(commandString) {
     console.log(msg.cexecuteCommandMessage1);
     returnData = [true, false];
   }
+  // Promise.all([returnData[2]]).then(commandExecutionFinished = true);
+
   if (commandMetricsEnabled === true && commandToExecute !== '' && commandToExecute !== false) {
     let performanceTrackingObject = {};
     commandEndTime = await ruleBroker.processRules([gen.cYYYYMMDD_HHmmss_SSS, ''], [biz.cgetNowMoment]);
