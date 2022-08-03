@@ -32,7 +32,17 @@ const initClientCommandsLibrary = function() {
     // client commands in order
     // ***********************************************
     [app_cmd.ccustomEchoCommand]: (inputData, inputMetaData) => clientCommands.customEchoCommand(inputData, inputMetaData),
-    [app_cmd.cbossPanic]: (inputData, inputMetaData) => clientCommands.bossPanic(inputData, inputMetaData)
+    [app_cmd.cbossPanic]: (inputData, inputMetaData) => clientCommands.bossPanic(inputData, inputMetaData),
+    [app_cmd.ccommand1]: (inputData, inputMetaData) => clientCommands.clientCommand01(inputData, inputMetaData),
+    [app_cmd.ccommand2]: (inputData, inputMetaData) => clientCommands.clientCommand02(inputData, inputMetaData),
+    [app_cmd.ccommand3]: (inputData, inputMetaData) => clientCommands.clientCommand03(inputData, inputMetaData),
+    [app_cmd.ccommand4]: (inputData, inputMetaData) => clientCommands.clientCommand04(inputData, inputMetaData),
+    [app_cmd.ccommand5]: (inputData, inputMetaData) => clientCommands.clientCommand05(inputData, inputMetaData),
+    [app_cmd.ccommand6]: (inputData, inputMetaData) => clientCommands.clientCommand06(inputData, inputMetaData),
+    [app_cmd.ccommand7]: (inputData, inputMetaData) => clientCommands.clientCommand07(inputData, inputMetaData),
+    [app_cmd.ccommand8]: (inputData, inputMetaData) => clientCommands.clientCommand08(inputData, inputMetaData),
+    [app_cmd.ccommand9]: (inputData, inputMetaData) => clientCommands.clientCommand09(inputData, inputMetaData),
+    [app_cmd.ccommand10]: (inputData, inputMetaData) => clientCommands.clientCommand10(inputData, inputMetaData)
   };
 };
 
