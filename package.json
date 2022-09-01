@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "npx eslint .",
     "release": "node ./build/buildRelease/src/buildRelease.js",
-    "test": "node ./test/testHarness/src/testHarness.js",
+    "test": "node --inspect ./test/testHarness/src/testHarness.js",
     "start": "node ./src/main.js",
     "vers": "standard-version -m \"chore(release) version %s \"",
     "docs": "jsdoc -c jsdoc.json"
