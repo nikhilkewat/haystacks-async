@@ -206,7 +206,7 @@ async function doesArrayContainLowerCaseConsolidatedString(inputData, inputMetaD
  * @author Seth Hollingsead
  * @date 2022/01/19
  */
-async function ascertainMatchingElements(inputData, inputMetaData) {
+async function ascertainMatchingElements_original(inputData, inputMetaData) {
   let functionName = ascertainMatchingElements.name;
   await loggers.consoleLog(namespacePrefix + functionName, msg.cBEGIN_Function);
   await loggers.consoleLog(namespacePrefix + functionName, msg.cinputDataIs + JSON.stringify(inputData));
@@ -225,6 +225,29 @@ async function ascertainMatchingElements(inputData, inputMetaData) {
   } // end-if (inputData && inputMetaData)
   await loggers.consoleLog(namespacePrefix + functionName, msg.creturnDataIs + returnData);
   await loggers.consoleLog(namespacePrefix + functionName, msg.cEND_Function);
+  return returnData;
+}
+
+function ascertainMatchingElements(inputData, inputMetaData) {
+  let functionName = ascertainMatchingElements.name;
+  loggers.consoleLog(namespacePrefix + functionName, msg.cBEGIN_Function);
+  loggers.consoleLog(namespacePrefix + functionName, msg.cinputDataIs + JSON.stringify(inputData));
+  loggers.consoleLog(namespacePrefix + functionName, msg.cinputMetaDataIs + JSON.stringify(inputMetaData));
+  let returnData = false;
+  if (inputData && inputMetaData) {
+    console.log(inputData,inputMetaData)
+    if (inputData === inputMetaData) {
+      // Array elements match
+      loggers.consoleLog(namespacePrefix + functionName, msg.cArrayElementsMatch);
+      returnData = true;
+    } else {
+      // Array elements do not match
+      loggers.consoleLog(namespacePrefix + functionName, msg.cArrayElementsDoNotMatch);
+      returnData = false;
+    }
+  } // end-if (inputData && inputMetaData)
+  loggers.consoleLog(namespacePrefix + functionName, msg.creturnDataIs + returnData);
+  loggers.consoleLog(namespacePrefix + functionName, msg.cEND_Function);
   return returnData;
 }
 
